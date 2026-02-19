@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Bracket Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Tùy chỉnh thanh cuộn cho hợp với dark mode */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        /* CSS cho các đường nối nhánh đấu */
+        .match-item {
+            position: relative;
+        }
+        .match-item::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 2px;
+            background-color: #4b5563;
+            top: 50%;
+            right: 0;
+            transform: translateX(100%);
+        }
+        .round:last-child .match-item::after {
+            display: none;
+        }
+        .match-item::before {
+            content: '';
+            position: absolute;
+            height: calc(100% + 2rem); /* 2rem là khoảng cách giữa các trận đấu */
+            width: 2px;
+            background-color: #4b5563;
+            right: 0;
+            top: 50%;
+            transform: translateX(calc(50% + 1px));
+        }
+        .match-item:nth-child(odd)::before {
+            transform: translateX(calc(50% + 1px)) translateY(-100%);
+            height: calc(50%);
+            top: 50%;
+        }
+         .match-item:nth-child(even)::before {
+            transform: translateX(calc(50% + 1px)) translateY(0%);
+             height: calc(50%);
+            top: 50%;
+        }
+
+        /* Xóa đường nối dọc cho các cặp đấu cuối */
+         .round .match-item:first-child:nth-last-child(2)::before,
+         .round .match-item:first-child:nth-last-child(2) ~ .match-item::before {
+            height: calc(50% + 1rem);
+         }
+         .match-item:nth-child(odd)::before {
+             border-bottom-left-radius: 8px;
+             border-top: 2px solid #4b5563;
+             border-left: 2px solid #4b5563;
+             transform: translateX(50%) translateY(0);
+         }
+         .match-item:nth-child(even)::before {
+             border-top-left-radius: 8px;
+             border-bottom: 2px solid #4b5563;
+             border-left: 2px solid #4b5563;
+             transform: translateX(50%) translateY(-100%);
+         }
+        .match-item:only-child::before {
+             display: none;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans antialiased">
+    
+    <div id="app-container" class="min-h-screen flex flex-col p-4 md:p-8">
+        
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-700">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-400 tracking-wider">
+                TOURNAMENT BRACKET
+            </h1>
+            <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                <span class="text-sm font-medium">Public Mode</span>
+                <label for="admin-toggle" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" value="" id="admin-toggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                </label>
+                <span class="text-sm font-medium">Admin Mode</span>
+            </div>
+        </header>
+
+        <!-- Admin Panel (hidden by default) -->
+        <div id="admin-panel" class="hidden mb-8 p-6 bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4 text-white">Bảng Điều Khiển Admin</h2>
+            <form id="create-tournament-form">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2">
+                        <label for="player-names" class="block mb-2 text-sm font-medium text-gray-300">Danh sách tuyển thủ (mỗi người một dòng)</label>
+                        <textarea id="player-names" rows="8" class="w-full bg-gray-700 border border-gray-600 text-gray-200 rounded-lg p-2.5 focus:ring-cyan-500 focus:border-cyan-500" placeholder="Player 1&#10;Player 2&#10;Player 3..."></textarea>
+                    </div>
+                    <div>
+                        <label for="tournament-size" class="block mb-2 text-sm font-medium text-gray-300">Quy mô giải đấu</label>
+                        <select id="tournament-size" class="w-full bg-gray-700 border border-gray-600 text-gray-200 rounded-lg p-2.5 focus:ring-cyan-500 focus:border-cyan-500">
+                            <option value="8">8 người</option>
+                            <option value="16">16 người</option>
+                        </select>
+                        <button type="submit" class="w-full mt-6 bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">
+                            Tạo / Cập nhật Giải đấu
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bracket Display Area -->
+        <main class="flex-grow">
+            <div id="bracket-container" class="flex overflow-x-auto pb-8 space-x-8 md:space-x-16">
+                <!-- Bracket will be rendered here by JavaScript -->
+            </div>
+            <div id="message-area" class="text-center text-gray-400 text-xl mt-10"></div>
+        </main>
+    </div>
+
+    <script>
+        const SCRIPT_URL = 'ĐIỀN_URL_CỦA_BẠN_VÀO_ĐÂY'; // !!! QUAN TRỌNG: Dán URL Web App của bạn vào đây
+
+        const adminToggle = document.getElementById('admin-toggle');
+        const adminPanel = document.getElementById('admin-panel');
+        const bracketContainer = document.getElementById('bracket-container');
+        const messageArea = document.getElementById('message-area');
+        const createForm = document.getElementById('create-tournament-form');
+        const playerNamesTextarea = document.getElementById('player-names');
+        const tournamentSizeSelect = document.getElementById('tournament-size');
+
+        let isAdminMode = false;
+        let tournamentData = [];
+
+        // --- CORE FUNCTIONS ---
+
+        const toggleMode = () => {
+            isAdminMode = adminToggle.checked;
+            adminPanel.classList.toggle('hidden', !isAdminMode);
+            renderBracket();
+        };
+
+        const showMessage = (text, isError = false) => {
+            bracketContainer.innerHTML = '';
+            messageArea.textContent = text;
+            messageArea.className = `text-center text-xl mt-10 ${isError ? 'text-red-400' : 'text-gray-400'}`;
+        };
+
+        const fetchData = async () => {
+            if (SCRIPT_URL === 'ĐIỀN_URL_CỦA_BẠN_VÀO_ĐÂY') {
+                showMessage('Vui lòng cấu hình SCRIPT_URL trong file index.html.', true);
+                return;
+            }
+            showMessage('Đang tải dữ liệu giải đấu...');
+            try {
+                const response = await fetch(SCRIPT_URL);
+                if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                const data = await response.json();
+                tournamentData = data;
+                renderBracket();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                showMessage(`Lỗi khi tải dữ liệu: ${error.message}. Hãy kiểm tra lại URL và quyền truy cập của Web App.`, true);
+            }
+        };
+
+        const postData = async (payload) => {
+            showMessage('Đang xử lý yêu cầu...');
+            try {
+                 const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Cần thiết cho Apps Script web app khi post
+                    cache: 'no-cache',
+                    redirect: 'follow',
+                    body: JSON.stringify(payload)
+                });
+                // no-cors không trả về response body, chúng ta chỉ cần biết nó đã gửi đi
+                // và sau đó fetch lại dữ liệu mới.
+                setTimeout(fetchData, 1500); // Đợi một chút để server xử lý rồi fetch lại
+            } catch (error) {
+                console.error('Post error:', error);
+                showMessage(`Lỗi khi gửi dữ liệu: ${error.message}`, true);
+            }
+        };
+
+        const handleCreateTournament = (e) => {
+            e.preventDefault();
+            const players = playerNamesTextarea.value.split('\n').map(p => p.trim()).filter(p => p);
+            const size = parseInt(tournamentSizeSelect.value, 10);
+
+            if (players.length !== size) {
+                alert(`Số lượng tuyển thủ (${players.length}) không khớp với quy mô giải đấu đã chọn (${size}).`);
+                return;
+            }
+
+            const payload = {
+                action: 'createTournament',
+                players: players,
+                size: size
+            };
+            postData(payload);
+        };
+        
+        const handleSelectWinner = (round, match, winnerName) => {
+            if (!isAdminMode) return;
+            if (!winnerName) return; // Không cho chọn ô trống
+            if (!confirm(`Bạn có chắc muốn chọn "${winnerName}" là người chiến thắng?`)) return;
+
+            const payload = {
+                action: 'updateMatch',
+                round: round,
+                match: match,
+                winner: winnerName
+            };
+            postData(payload);
+        };
+
+        // --- RENDER FUNCTION ---
+
+        const renderBracket = () => {
+            if (!tournamentData || tournamentData.length === 0) {
+                showMessage('Chưa có dữ liệu giải đấu. Admin hãy tạo một giải đấu mới.');
+                return;
+            }
+            messageArea.textContent = '';
+            bracketContainer.innerHTML = '';
+
+            const rounds = tournamentData.reduce((acc, match) => {
+                (acc[match.Round] = acc[match.Round] || []).push(match);
+                return acc;
+            }, {});
+
+            Object.keys(rounds).forEach(roundNumber => {
+                const roundDiv = document.createElement('div');
+                roundDiv.className = 'round flex flex-col justify-around space-y-8';
+                roundDiv.innerHTML = `<h3 class="text-xl font-bold text-center text-gray-400 mb-4">Vòng ${roundNumber}</h3>`;
+                
+                const matchesDiv = document.createElement('div');
+                matchesDiv.className = 'flex flex-col justify-around flex-grow space-y-8';
+
+
+                rounds[roundNumber].forEach(match => {
+                    const matchDiv = document.createElement('div');
+                    matchDiv.className = 'match-item bg-gray-800 rounded-lg p-3 shadow-md border border-gray-700 w-56';
+
+                    const createPlayerDiv = (name, isWinner) => {
+                        const playerDiv = document.createElement('div');
+                        let cursorClass = '';
+                        if (isAdminMode && match.Player1 && match.Player2 && !match.Winner) {
+                           cursorClass = name ? 'cursor-pointer hover:bg-cyan-800' : 'cursor-not-allowed';
+                        }
+                        
+                        let winnerClass = isWinner ? 'font-bold text-cyan-400' : 'text-gray-300';
+                        if (!name) winnerClass = 'text-gray-500';
+
+                        playerDiv.className = `flex justify-between items-center p-2 rounded transition-colors duration-200 ${cursorClass} ${winnerClass}`;
+                        playerDiv.textContent = name || '...';
+                        if (cursorClass.includes('cursor-pointer')) {
+                           playerDiv.onclick = () => handleSelectWinner(match.Round, match.Match, name);
+                        }
+                        return playerDiv;
+                    };
+
+                    const player1Div = createPlayerDiv(match.Player1, match.Winner === match.Player1);
+                    const player2Div = createPlayerDiv(match.Player2, match.Winner === match.Player2);
+                    
+                    const separator = document.createElement('div');
+                    separator.className = 'h-px bg-gray-600 my-1';
+
+                    matchDiv.appendChild(player1Div);
+                    matchDiv.appendChild(separator);
+                    matchDiv.appendChild(player2Div);
+                    
+                    matchesDiv.appendChild(matchDiv);
+                });
+                roundDiv.appendChild(matchesDiv);
+                bracketContainer.appendChild(roundDiv);
+            });
+        };
+
+
+        // --- EVENT LISTENERS & INITIALIZATION ---
+
+        adminToggle.addEventListener('change', toggleMode);
+        createForm.addEventListener('submit', handleCreateTournament);
+
+        fetchData();
+    </script>
+</body>
+</html>
