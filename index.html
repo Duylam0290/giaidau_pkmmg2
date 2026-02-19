@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Bracket</title>
+    <title>Giải đấu Solo PK Pokémon Mega 2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -66,7 +66,7 @@
 </head>
 <body class="antialiased font-sans">
     <header class="flex justify-between items-center p-4 border-b border-slate-700">
-        <h1 class="text-2xl font-bold tracking-wider text-sky-400">TOURNAMENT BRACKET</h1>
+        <h1 class="text-2xl font-bold tracking-wider text-sky-400">Giải đấu Solo PK Pokémon Mega 2</h1>
     </header>
 
     <main id="main-content" class="p-4">
@@ -75,7 +75,7 @@
     </main>
     
     <script>
-        const PUBLIC_SCRIPT_URL = 'ĐIỀN_URL_SCRIPT_PUBLIC_CỦA_BẠN_VÀO_ĐÂY';
+        const PUBLIC_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzVaRsH6cqftBwF9564r-YHXTB86wb-W-eFNRWjPsbAskHvzRUSHy3EJDnqenTYPzk/exec';
 
         const bracketContainer = document.getElementById('bracket');
         const messageArea = document.getElementById('message-area');
@@ -86,8 +86,8 @@
         }
         
         async function fetchTournamentData() {
-            if (!PUBLIC_SCRIPT_URL || PUBLIC_SCRIPT_URL === 'ĐIỀN_URL_SCRIPT_PUBLIC_CỦA_BẠN_VÀO_ĐÂY') {
-                showMessage('Vui lòng cấu hình PUBLIC_SCRIPT_URL trong file index.html.', true);
+            if (!PUBLIC_SCRIPT_URL || PUBLIC_SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbzVaRsH6cqftBwF9564r-YHXTB86wb-W-eFNRWjPsbAskHvzRUSHy3EJDnqenTYPzk/exec') {
+                showMessage('Chưa có dữ liệu', true);
                 return;
             }
             showMessage('Loading tournament data...');
