@@ -73,7 +73,7 @@
 </head>
 <body class="antialiased font-sans">
     <header class="flex justify-between items-center p-4 border-b border-slate-700">
-        <h1 class="text-2xl font-bold tracking-wider text-sky-400">TOURNAMENT BRACKET</h1>
+        <h1 class="text-2xl font-bold tracking-wider text-sky-400">GIẢI ĐẤU SOLO POKEMON MEGA 2</h1>
         <div>
             <button id="login-btn" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded">Admin Login</button>
             <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded hidden">Logout</button>
@@ -120,7 +120,7 @@
     </div>
     
     <script>
-        const SCRIPT_URL = 'ĐIỀN_URL_CỦA_BẠN_VÀO_ĐÂY';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxgqfr7RcITLuqSI0iREDuTgihqvzvSAv3XRXGYHGCNmn3F6HskEoI7QmJCN-AO7XRg/exec';
 
         const bracketContainer = document.getElementById('bracket');
         const messageArea = document.getElementById('message-area');
@@ -157,7 +157,7 @@
         
         async function fetchTournamentData() {
             if (!SCRIPT_URL || SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxgqfr7RcITLuqSI0iREDuTgihqvzvSAv3XRXGYHGCNmn3F6HskEoI7QmJCN-AO7XRg/exec') {
-                showMessage('Vui lòng cấu hình SCRIPT_URL trong file index.html.', true);
+                showMessage('Chưa có thông tin giải đấu', true);
                 return;
             }
             showMessage('Loading tournament data...');
