@@ -343,15 +343,27 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'login', password })
                 });
-                const result = await response.json();
-                if (result.success) {
-                    sessionStorage.setItem('isAdmin', 'true');
-                    updateAdminUI(true);
-                    loginModal.classList.add('hidden');
-                    passwordInput.value = '';
-                } else {
-                    throw new Error(result.message || 'Incorrect password');
+
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok. Status: ${response.status}`);
                 }
+                
+                const textResponse = await response.text();
+                try {
+                    const result = JSON.parse(textResponse);
+                    if (result.success) {
+                        sessionStorage.setItem('isAdmin', 'true');
+                        updateAdminUI(true);
+                        loginModal.classList.add('hidden');
+                        passwordInput.value = '';
+                    } else {
+                        throw new Error(result.message || 'Incorrect password');
+                    }
+                } catch (jsonError) {
+                    console.error("Failed to parse JSON:", textResponse);
+                    throw new Error("Response is not JSON. Check Apps Script permissions. 'Who has access' must be 'Anyone'.");
+                }
+
             } catch (error) {
                 console.error('Login failed:', error);
                 loginError.textContent = error.message;
